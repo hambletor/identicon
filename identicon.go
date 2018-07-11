@@ -199,8 +199,8 @@ func saveFile(i *image.Image, name string, jpg bool) error {
 
 //String satisfies the Stringer interface
 func (i Icon) String() string {
-	return fmt.Sprintf("Icon:\n\tfile name: %s\n\tsize in pixels %d x %d\n\tsize in blocks %d x %d\n\tforeground %T%v\n\tbackground %T%v\n%s",
-		i.file, i.pixels, i.pixels, i.size, i.size, i.foreground.RGBA, i.foreground, i.background, i.background, i.pattern())
+	return fmt.Sprintf("Icon:\nfile name: %s\nsize in pixels %d x %d\nsize in blocks %d x %d\nforeground %v\nbackground %v\n%s",
+		i.file, i.pixels, i.pixels, i.size, i.size, i.foreground, i.background, i.pattern())
 }
 
 func (i *Icon) pattern() string {

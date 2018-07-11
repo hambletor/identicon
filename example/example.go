@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
 	"log"
 
@@ -20,7 +21,9 @@ func main() {
 	if err != nil {
 		log.Printf("error saving simple.png, %v\n", err)
 	}
+	fmt.Printf("%v\n", simple.Pattern())
 
+	fmt.Print("\n--------------\n\n")
 	// Create a custom icon
 	custom, err := identicon.New("custom",
 		identicon.WithBackgroundColor(color.Black), // change the background color
@@ -33,4 +36,7 @@ func main() {
 	if err != nil {
 		log.Printf("erro saving custom.jpeg, %v\n", err)
 	}
+
+	fmt.Printf("%v", custom)
+
 }
