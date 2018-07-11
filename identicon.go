@@ -150,13 +150,13 @@ func (i *Icon) draw() error {
 	dc.Fill()
 
 	// start drawing pattern using the boolean pattern grid (if true draw a block) using Icon foreground
-	fr, fg, fb, _ := i.foreground.RGBA()
 	length := i.pixels / i.size
 	for j := 0; j < len(i.grid); j++ {
 		if i.grid[j] {
 			dc.DrawRectangle(float64((j%i.size)*length), float64((j/i.size)*length), float64(length), float64(length))
 		}
 	}
+	fr, fg, fb, _ := i.foreground.RGBA()
 	dc.SetRGB255(int(fr), int(fg), int(fb))
 	dc.Fill()
 
