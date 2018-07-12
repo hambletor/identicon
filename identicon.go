@@ -13,6 +13,20 @@ import (
 	"github.com/fogleman/gg"
 )
 
+const (
+	defaultPixels = 250
+	//MinPixels defines the smallest icon size in pixels
+	MinPixels = 100
+	//MaxPixels defines the largest icon size in pixels
+	MaxPixels = 500
+
+	defaultSize = 5
+	//MinSize is the smallest n can be in an n x n pattern
+	MinSize = 5
+	//MaxSize is the largest n can be in an n x n pattern
+	MaxSize = 20
+)
+
 //Icon holds all of the info to build a mirrored block icon
 type Icon struct {
 	size       int //n x n blocks
@@ -26,7 +40,7 @@ type Icon struct {
 }
 
 //Option is a functional option used to apply new options (Thanks Dave & Fransesc)
-type Option func(*Icon)
+type Option func(*Icon) error
 
 //New creates a new Icon image given file name and Options
 func New(name string, options ...Option) (*Icon, error) {
@@ -36,8 +50,8 @@ func New(name string, options ...Option) (*Icon, error) {
 	}
 	i := &Icon{
 		file:       name,
-		size:       5,
-		pixels:     250,
+		size:       defaultSize,
+		pixels:     defaultPixels,
 		background: color.White,
 	}
 
@@ -52,12 +66,21 @@ func New(name string, options ...Option) (*Icon, error) {
 		A: 255,
 	}
 
+	errors := make([]error, 0)
 	for _, option := range options {
-		option(i)
+		err := option(i)
+		if err != nil {
+			errors = append(errors, err)
+		}
 	}
-	if i.pixels <= i.size {
-		return nil, fmt.Errorf("size:%d needs to be smaller than pixels:%d ", i.size, i.pixels)
+	if len(errors) > 0 {
+		msg := "\nOption errors:"
+		for _, e := range errors {
+			msg = fmt.Sprintf("%s\n%s", msg, e)
+		}
+		return nil, fmt.Errorf("Config error: %s", msg)
 	}
+
 	// create the n x n grid as single slice of booleans (if the grid element is true, print a block foreground color)
 	i.grid = make([]bool, i.size*i.size)
 	createPatternGrid(i)
@@ -67,22 +90,52 @@ func New(name string, options ...Option) (*Icon, error) {
 
 //WithPixels set the number of pixels per side of the icon
 func WithPixels(p int) Option {
-	return func(i *Icon) { i.pixels = p }
+	return func(i *Icon) error {
+		if p < MinPixels {
+			return fmt.Errorf("pixel length needs to be greater than %d", MinPixels)
+		}
+		if p > MaxPixels {
+			return fmt.Errorf("pixel length needs to be less than %d", MaxPixels)
+		}
+		i.pixels = int(p)
+		return nil
+	}
 }
 
 //WithSize sets the number of blocks per column and row
 func WithSize(s int) Option {
-	return func(i *Icon) { i.size = s }
+	return func(i *Icon) error {
+		if s < MinSize {
+			return fmt.Errorf("grid size can not be less than %d", MinSize)
+		}
+		if s > MaxSize {
+			return fmt.Errorf("grid size can not exceed max of %d", MaxSize)
+		}
+		i.size = int(s)
+		return nil
+	}
 }
 
 //WithBackgroundColor sets the background color
 func WithBackgroundColor(c color.Color) Option {
-	return func(i *Icon) { i.background = c }
+	return func(i *Icon) error {
+		if c == nil {
+			return fmt.Errorf("can not set background to nil color, please provide a valid color")
+		}
+		i.background = c
+		return nil
+	}
 }
 
 //WithForegroundColor sets the foreground color
 func WithForegroundColor(c color.Color) Option {
-	return func(i *Icon) { i.foreground = c }
+	return func(i *Icon) error {
+		if c == nil {
+			return fmt.Errorf("can not set foreground color to nil, please provide a valid color")
+		}
+		i.foreground = c
+		return nil
+	}
 }
 
 // allows for changing of the checksum to include more elements

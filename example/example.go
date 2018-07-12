@@ -14,6 +14,7 @@ func main() {
 	simple, err := identicon.New("simple")
 	if err != nil {
 		log.Printf("error creating icon %v\n", err)
+		return
 	}
 
 	// save the icon to a file named simple.png
@@ -32,6 +33,10 @@ func main() {
 		identicon.WithSize(7),                      // change the blocks per row & column block x block
 		identicon.WithPixels(350))                  // change the size of icon's side pixels x pixels square
 
+	if err != nil {
+		log.Printf("error creating custom identicon %v", err)
+		return
+	}
 	// save the custom icon to a file named custom.jpeg
 	err = custom.SaveJPG()
 	if err != nil {
