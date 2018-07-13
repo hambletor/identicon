@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"image/draw"
 	"image/jpeg"
 	"image/png"
 	"io"
 	"os"
-
-	"github.com/fogleman/gg"
 )
 
 const (
@@ -194,26 +193,25 @@ func createPatternGrid(i *Icon) {
 
 func (i *Icon) draw() error {
 	//go through grid to create the image
-	dc := gg.NewContext(i.pixels, i.pixels) // build a base image of pixels squared
+	base := image.NewRGBA(image.Rect(0, 0, i.pixels, i.pixels)) // build a base image of pixels squared
 
 	// draw base icon square with background fill of Icon
-	dc.DrawRectangle(0, 0, float64(i.pixels), float64(i.pixels))
-	br, bg, bb, _ := i.background.RGBA()
-	dc.SetRGB255(int(br), int(bg), int(bb))
-	dc.Fill()
+	draw.Draw(base, base.Bounds(), &image.Uniform{i.background}, image.ZP, draw.Src)
 
 	// start drawing pattern using the boolean pattern grid (if true draw a block) using Icon foreground
 	length := i.pixels / i.size
 	for j := 0; j < len(i.grid); j++ {
 		if i.grid[j] {
-			dc.DrawRectangle(float64((j%i.size)*length), float64((j/i.size)*length), float64(length), float64(length))
+			x1 := (j % i.size) * length
+			y1 := (j / i.size) * length
+			x2 := x1 + length
+			y2 := y1 + length
+			block := image.Rect(x1, y1, x2, y2)
+			draw.Draw(base, block, &image.Uniform{i.foreground}, image.ZP, draw.Src)
 		}
 	}
-	fr, fg, fb, _ := i.foreground.RGBA()
-	dc.SetRGB255(int(fr), int(fg), int(fb))
-	dc.Fill()
 
-	i.img = dc.Image()
+	i.img = base
 	return nil
 }
 
