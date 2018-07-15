@@ -73,7 +73,7 @@ func New(name string, options ...Option) (*Icon, error) {
 			errors = append(errors, err)
 		}
 	}
-	//convert all option errors into a single reportable error
+	//convert all Option errors into a single reportable error
 	if len(errors) > 0 {
 		msg := "\nOption errors:"
 		for _, e := range errors {
@@ -82,14 +82,16 @@ func New(name string, options ...Option) (*Icon, error) {
 		return nil, fmt.Errorf("Config error: %s", msg)
 	}
 
-	// create the n x n grid as single slice of booleans (if the grid element is true, print a block foreground color)
+	// create the n x n grid as single slice of booleans
+	// if a grid element is true, print a block of foreground color
 	i.grid = make([]bool, i.size*i.size)
 	createPatternGrid(i)
-	i.draw()
+	i.img = drawPattern(i.pixels, i.size, i.foreground, i.background, i.grid)
 	return i, nil
 }
 
-//WithPixels set the number of pixels per side of the icon
+//WithPixels set the number of pixels per side of the icon,
+//for best results ps should be a multiple of size
 func WithPixels(p int) Option {
 	return func(i *Icon) error {
 		if p < MinPixels {
@@ -147,6 +149,27 @@ func WithComplementaryBackground() Option {
 	}
 }
 
+//Pattern display's the pattern of the image
+func (i *Icon) Pattern() string {
+	return pattern(i.grid, i.size)
+}
+
+//SavePNG saves the icon to png format
+func (i *Icon) SavePNG() error {
+	return saveFile(&i.img, i.file+".png", false)
+}
+
+//SaveJPG saves the icon to jpg format
+func (i *Icon) SaveJPG() error {
+	return saveFile(&i.img, i.file+".jpeg", true)
+}
+
+//String satisfies the Stringer interface
+func (i *Icon) String() string {
+	return fmt.Sprintf("Icon:\nfile name: %s\nsize in pixels %d x %d\nsize in blocks %d x %d\nforeground %v\nbackground %v\n%s\n",
+		i.file, i.pixels, i.pixels, i.size, i.size, i.foreground, i.background, pattern(i.grid, i.size))
+}
+
 // allows for changing of the checksum to include more elements
 func createChecksum(input ...string) []byte {
 	ck := md5.New()
@@ -159,8 +182,6 @@ func createChecksum(input ...string) []byte {
 }
 
 func createPatternGrid(i *Icon) {
-	// for n x n given an checksum array of length l build a mirror matrix
-	// if l / (n/2) > n we have enough data to just use mirrored slices of odd/even to create grid
 	chunk := (i.size / 2)
 	if i.size%2 == 1 {
 		chunk++
@@ -201,43 +222,27 @@ func createPatternGrid(i *Icon) {
 	}
 }
 
-func (i *Icon) draw() error {
-	//go through grid to create the image
-	base := image.NewRGBA(image.Rect(0, 0, i.pixels, i.pixels)) // build a base image of pixels squared
+func drawPattern(pixels, size int, foreground, background color.Color, grid []bool) image.Image {
+
+	base := image.NewRGBA(image.Rect(0, 0, pixels, pixels)) // build a base image of pixels squared
 
 	// draw base icon square with background fill of Icon
-	draw.Draw(base, base.Bounds(), &image.Uniform{i.background}, image.ZP, draw.Src)
+	draw.Draw(base, base.Bounds(), &image.Uniform{background}, image.ZP, draw.Src)
 
 	// start drawing pattern using the boolean pattern grid (if true draw a block) using Icon foreground
-	length := i.pixels / i.size
-	for j := 0; j < len(i.grid); j++ {
-		if i.grid[j] {
-			x1 := (j % i.size) * length
-			y1 := (j / i.size) * length
+	offset := (pixels % size) / 2 //offest accounts for uneven distribution of blocks (size) into number of pixels
+	length := pixels / size
+	for j := 0; j < len(grid); j++ {
+		if grid[j] {
+			x1 := (j%size)*length + offset
+			y1 := (j/size)*length + offset
 			x2 := x1 + length
 			y2 := y1 + length
 			block := image.Rect(x1, y1, x2, y2)
-			draw.Draw(base, block, &image.Uniform{i.foreground}, image.ZP, draw.Src)
+			draw.Draw(base, block, &image.Uniform{foreground}, image.ZP, draw.Src)
 		}
 	}
-
-	i.img = base
-	return nil
-}
-
-//Pattern display's the pattern of the image
-func (i *Icon) Pattern() string {
-	return i.pattern()
-}
-
-//SavePNG saves the icon to png format
-func (i *Icon) SavePNG() error {
-	return saveFile(&i.img, i.file+".png", false)
-}
-
-//SaveJPG saves the icon to jpg format
-func (i *Icon) SaveJPG() error {
-	return saveFile(&i.img, i.file+".jpeg", true)
+	return image.Image(base)
 }
 
 func saveFile(i *image.Image, name string, jpg bool) error {
@@ -258,20 +263,14 @@ func saveFile(i *image.Image, name string, jpg bool) error {
 	return nil
 }
 
-//String satisfies the Stringer interface
-func (i Icon) String() string {
-	return fmt.Sprintf("Icon:\nfile name: %s\nsize in pixels %d x %d\nsize in blocks %d x %d\nforeground %v\nbackground %v\n%s\n",
-		i.file, i.pixels, i.pixels, i.size, i.size, i.foreground, i.background, i.pattern())
-}
-
-func (i *Icon) pattern() string {
+func pattern(grid []bool, size int) string {
 	var s string
 	s = "Pattern:"
-	for g := 0; g < len(i.grid); g++ {
-		if g%i.size == 0 {
+	for g := 0; g < len(grid); g++ {
+		if g%size == 0 {
 			s = s + "\n"
 		}
-		if i.grid[g] {
+		if grid[g] {
 			s = s + "*"
 		} else {
 			s = s + "."

@@ -29,10 +29,10 @@ func main() {
 	// Create a custom icon
 	custom, err := identicon.New("custom",
 		// identicon.WithBackgroundColor(bg), // change the background color
-		identicon.WithForegroundColor(fg), // change the foreground color
-		identicon.WithComplementaryBackground(),
-		identicon.WithSize(7),     // change the blocks per row & column block x block
-		identicon.WithPixels(350)) // change the size of icon's side pixels x pixels square
+		identicon.WithForegroundColor(fg),       // change the foreground color
+		identicon.WithComplementaryBackground(), // makes the background a complimentary color
+		identicon.WithSize(13),                  // change the blocks per row & column block x block
+		identicon.WithPixels(500))               // change the size of icon's side pixels x pixels square
 
 	if err != nil {
 		log.Printf("error creating custom identicon %v", err)
