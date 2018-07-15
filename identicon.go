@@ -65,6 +65,7 @@ func New(name string, options ...Option) (*Icon, error) {
 		A: 255,
 	}
 
+	// errors accumulates all errors from invalid option inputs
 	errors := make([]error, 0)
 	for _, option := range options {
 		err := option(i)
@@ -72,6 +73,7 @@ func New(name string, options ...Option) (*Icon, error) {
 			errors = append(errors, err)
 		}
 	}
+	//convert all option errors into a single reportable error
 	if len(errors) > 0 {
 		msg := "\nOption errors:"
 		for _, e := range errors {
@@ -133,6 +135,14 @@ func WithForegroundColor(c color.Color) Option {
 			return fmt.Errorf("can not set foreground color to nil, please provide a valid color")
 		}
 		i.foreground = c
+		return nil
+	}
+}
+
+//WithComplementaryBackground creates background with the complementary color of the foreground
+func WithComplementaryBackground() Option {
+	return func(i *Icon) error {
+		i.background = complementary(i.foreground)
 		return nil
 	}
 }
@@ -250,7 +260,7 @@ func saveFile(i *image.Image, name string, jpg bool) error {
 
 //String satisfies the Stringer interface
 func (i Icon) String() string {
-	return fmt.Sprintf("Icon:\nfile name: %s\nsize in pixels %d x %d\nsize in blocks %d x %d\nforeground %v\nbackground %v\n%s",
+	return fmt.Sprintf("Icon:\nfile name: %s\nsize in pixels %d x %d\nsize in blocks %d x %d\nforeground %v\nbackground %v\n%s\n",
 		i.file, i.pixels, i.pixels, i.size, i.size, i.foreground, i.background, i.pattern())
 }
 
