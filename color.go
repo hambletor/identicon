@@ -7,9 +7,9 @@ import (
 
 // HSL represents Hue/Saturation/Luminace
 type hsl struct {
-	H float64 //Hue
-	S float64 //Saturation
-	L float64 //Luminace
+	H float64
+	S float64
+	L float64
 }
 
 func complementary(c color.Color) color.Color {
