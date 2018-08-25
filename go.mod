@@ -1,1 +1,1 @@
-module identicon
+module github.com/hambletor/identicon
